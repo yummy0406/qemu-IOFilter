@@ -1,0 +1,10 @@
+block_ss.add(files('library.c',
+                    'qiof_thread.c', 
+                    'qiof_log.c', 
+                    'qiof_heap.c', 
+                    'qiof_img.c', 
+                    'qiof_bitmap.c',
+                    'qiof_disk.c',
+                    'io_filter.c',
+                    'qiof_filter.c'
+                    ))
