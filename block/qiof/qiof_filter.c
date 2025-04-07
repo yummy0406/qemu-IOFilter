@@ -103,7 +103,7 @@ static coroutine_fn int qiof_filter_co_pwritev(BlockDriverState *bs, uint64_t of
 }
 
 BlockDriver bdrv_qiof_filter = {
-    .format_name = "QIOFfilter",
+    .format_name = "qiof_filter",
     .instance_size = sizeof(BDRVQiofFilterState),
     .bdrv_open = qiof_filter_open,
     .bdrv_close = qiof_filter_close,
