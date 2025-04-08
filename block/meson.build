@@ -39,6 +39,7 @@ block_ss.add(files(
   'throttle.c',
   'throttle-groups.c',
   'write-threshold.c',
+  'qiof_filter.c',
 ), zstd, zlib, gnutls)
 
 

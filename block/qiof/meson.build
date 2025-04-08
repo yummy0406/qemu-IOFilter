@@ -5,6 +5,5 @@ block_ss.add(files('library.c',
                     'qiof_img.c', 
                     'qiof_bitmap.c',
                     'qiof_disk.c',
-                    'io_filter.c',
-                    'qiof_filter.c'
+                    'io_filter.c'
                     ))
