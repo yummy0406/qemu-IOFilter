@@ -22,9 +22,16 @@ typedef struct RingBuffer
     size_t current_size;
 } RingBuffer;
 
+// typedef struct QiofFilterOps
+// {
+//     void (*start)(ReplicationState *rs, ReplicationMode mode, Error **errp);
+//     void (*stop)(ReplicationState *rs, bool failover, Error **errp);
+//     void (*checkpoint)(ReplicationState *rs, Error **errp);
+//     void (*get_error)(ReplicationState *rs, Error **errp);
+// } QiofFilterOps;
+
 typedef struct BDRVQiofFilterState
 {
-    BlockDriverState *child;
     RingBuffer ring_buffer;
 } BDRVQiofFilterState;
 
@@ -80,6 +87,18 @@ static void qiof_filter_close(BlockDriverState *bs)
     fprintf(stdout, "qiof_filter_close \n");
 }
 
+static int coroutine_fn GRAPH_RDLOCK
+qiof_filter_co_flush(BlockDriverState *bs)
+{
+    return bdrv_co_flush(bs->file->bs);
+}
+
+static int64_t coroutine_fn GRAPH_RDLOCK
+qiof_filter_co_getlength(BlockDriverState *bs)
+{
+    return bdrv_co_getlength(bs->file->bs);
+}
+
 static int qiof_filter_open(BlockDriverState *bs, QDict *options, int flags, Error **errp)
 {
     BDRVQiofFilterState *s = bs->opaque;
@@ -88,26 +107,31 @@ static int qiof_filter_open(BlockDriverState *bs, QDict *options, int flags, Err
     {
         return ret;
     }
-    if (!s->child)
-    {
-        return -EINVAL;
-    }
     fprintf(stdout, "BDRV qiof_filter_open sucess \n");
     printf("Child file: %s\n", bs->file ? bdrv_get_node_name(bs->file->bs) : "NULL");
     ring_buffer_init(&s->ring_buffer);
     return 0;
 }
 
-static int coroutine_fn GRAPH_RDLOCK qiof_filter_co_preadv(BlockDriverState *bs, int64_t offset, int64_t bytes,
-                                                           QEMUIOVector *qiov, BdrvRequestFlags flags)
+static int coroutine_fn GRAPH_RDLOCK
+qiof_filter_co_preadv(BlockDriverState *bs, int64_t offset, int64_t bytes,
+                      QEMUIOVector *qiov, BdrvRequestFlags flags)
 {
     // readv
     // BDRVQiofFilterState *s = bs->opaque;
     return bdrv_co_preadv(bs->file, offset, bytes, qiov, flags);
 }
 
-static int coroutine_fn GRAPH_RDLOCK qiof_filter_co_pwritev(BlockDriverState *bs, int64_t offset, int64_t bytes,
-                                                            QEMUIOVector *qiov, BdrvRequestFlags flags)
+static int coroutine_fn GRAPH_RDLOCK
+qiof_filter_co_pwrite_zeroes(BlockDriverState *bs, int64_t offset,
+                             int64_t bytes, BdrvRequestFlags flags)
+{
+    return bdrv_co_pwrite_zeroes(bs->file, offset, bytes, flags);
+}
+
+static int coroutine_fn GRAPH_RDLOCK
+qiof_filter_co_pwritev(BlockDriverState *bs, int64_t offset, int64_t bytes,
+                       QEMUIOVector *qiov, BdrvRequestFlags flags)
 {
     BDRVQiofFilterState *s = bs->opaque;
     size_t total_size = qiov->size;
@@ -123,9 +147,15 @@ static int coroutine_fn GRAPH_RDLOCK qiof_filter_co_pwritev(BlockDriverState *bs
 BlockDriver bdrv_qiof_filter = {
     .format_name = "qiof_filter",
     .instance_size = sizeof(BDRVQiofFilterState),
+
     .bdrv_open = qiof_filter_open,
     .bdrv_close = qiof_filter_close,
+    .bdrv_co_flush = qiof_filter_co_flush,
+
     .bdrv_child_perm = bdrv_default_perms,
+    .bdrv_co_getlength = qiof_filter_co_getlength,
+
+    .bdrv_co_pwrite_zeroes = qiof_filter_co_pwrite_zeroes,
     .bdrv_co_preadv = qiof_filter_co_preadv,
     .bdrv_co_pwritev = qiof_filter_co_pwritev,
     .is_filter = true,
