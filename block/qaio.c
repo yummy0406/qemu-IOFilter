@@ -3,6 +3,7 @@
 #include "block/block.h"
 #include "qemu/main-loop.h"
 #include "qemu/queue.h"
+#include "qapi/error.h"
 
 typedef struct BDRVQaioState BDRVQaioState;
 typedef struct IOFilter IOFilter;
@@ -36,7 +37,7 @@ struct IOFilterOps
     void (*get_error)(BDRVQaioState *qs, Error **errp);
 };
 
-static int IOFilter_create(BDRVQaioState *qs, IOFilterOps *ops, char *filter_name, Error **errp)
+static int IOFilter_create(BDRVQaioState *qs, IOFilterOps *ops, const char *filter_name, Error **errp)
 {
     IOFilter *iof = g_new0(IOFilter, 1);
     int ret;
@@ -59,7 +60,7 @@ static int IOFilter_create(BDRVQaioState *qs, IOFilterOps *ops, char *filter_nam
     return 0;
 }
 
-void qaio_work(BDRVQaioState *qs)
+static void qaio_work(BDRVQaioState *qs)
 {
     IOFilter *iof, *next;
     Error *local_err = NULL;
