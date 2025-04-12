@@ -39,7 +39,7 @@ block_ss.add(files(
   'throttle.c',
   'throttle-groups.c',
   'write-threshold.c',
-  'qiof_filter.c',
+  'qaio.c',
 ), zstd, zlib, gnutls)
 
 
@@ -171,5 +171,5 @@ system_ss.add(files('qapi-sysemu.c'))
 
 subdir('export')
 subdir('monitor')
-subdir('qiof')
+
 modules += {'block': block_modules}

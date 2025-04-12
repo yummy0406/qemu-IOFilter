@@ -136,11 +136,6 @@
 
 #define MAX_VIRTIO_CONSOLES 1
 
-extern bool is_syn;
-extern char *soname;
-extern bool enable_qiof;
-extern void *snapshot_fun_addr;
-
 typedef struct BlockdevOptionsQueueEntry
 {
     BlockdevOptions *bdo;
@@ -3140,25 +3135,6 @@ void qemu_init(int argc, char **argv)
             }
             switch (popt->index)
             {
-            case QEMU_OPTION_filter:
-            {
-                // char *mode = (char *)optarg; // 直接将 optarg 作为 mode 处理
-                // printf("mode is %s\n", mode);
-
-                // // 检查 mode 是否是 "sync" 或 "async"
-                // if (strcmp(mode, "sync") && strcmp(mode, "async"))
-                // {
-                //     printf("only support sync or async\n");
-                //     exit(1);
-                // }
-
-                // // 根据 mode 设置 is_syn 标志
-                // if (strcmp(mode, "sync") == 0)
-                //     is_syn = true;
-                enable_qiof = true;
-                // snapshot_fun_addr = (void *)qmp_blockdev_snapshot_sync;
-                break;
-            }
             case QEMU_OPTION_cpu:
                 /* hw initialization will check this */
                 cpu_option = optarg;

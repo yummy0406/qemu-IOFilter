@@ -28,18 +28,10 @@
 #include "trace.h"
 #include "migration/misc.h"
 
-#include "qiof/qiof_disk.h"
-#include "qiof/io_filter.h"
-
 /* Number of coroutines to reserve per attached device model */
 #define COROUTINE_POOL_RESERVATION 64
 
 #define NOT_DONE 0x7fffffff /* used while emulated sync operation in progress */
-
-extern bool enable_qiof;
-extern bool is_init;
-// bool isFind=false;
-extern bool is_syn;
 
 typedef struct BlockBackendAioNotifier
 {
@@ -1815,62 +1807,12 @@ BlockAIOCB *blk_aio_preadv(BlockBackend *blk, int64_t offset,
                         blk_aio_read_entry, flags, cb, opaque);
 }
 
-// void blk_complete_QAIO(void *opaque, QIOF_Status status);
-// void blk_complete_QAIO(void *opaque, QIOF_Status status)
-// {
-//     printf("QIOF_AIO sumbit completely\n");
-// }
-// extern void sync_QIOF_DiskIO_submit(const BlockDriverState *bs, QIOF_IO_type type, time_t timestamp, int64_t sector_num,
-//                                     const QEMUIOVector *qiov, int nb_sectors, QIOF_DiskCallback *cb, void *opaque);
-// extern void async_QIOF_DiskIO_submit(const BlockDriverState *bs, QIOF_IO_type type, time_t timestamp, int64_t sector_num,
-//                                      const QEMUIOVector *qiov, int nb_sectors, QIOF_DiskCallback *cb, void *opaque);
-// extern QIOF_Status QIOF_init(const BlockDriverState *bs, const char *device);
-
 BlockAIOCB *blk_aio_pwritev(BlockBackend *blk, int64_t offset,
                             QEMUIOVector *qiov, BdrvRequestFlags flags,
                             BlockCompletionFunc *cb, void *opaque)
 {
     IO_CODE();
     assert((uint64_t)qiov->size <= INT64_MAX);
-
-    // char *device = blk->name;
-    // BlockDriverState *bs = blk_bs(blk);
-    // uint64_t bytes = qiov->size;
-    // int64_t sector_num = offset >> BDRV_SECTOR_BITS;
-    // int nb_sectors = bytes >> BDRV_SECTOR_BITS;
-
-    if (enable_qiof)
-    {
-        // if (!is_init)
-        // {
-        //     is_init = true;
-        //     QIOF_Status status = QIOF_init(bs, device);
-        //     if (status == QIOF_FAILURE)
-        //         goto final;
-        // }
-        // time_t current = time(NULL);
-        // if (is_syn)
-        //     sync_QIOF_DiskIO_submit(bs, QIOF_WRITEV, current,
-        //                             sector_num, qiov, nb_sectors,
-        //                             blk_complete_QAIO, NULL);
-        // else
-        //     async_QIOF_DiskIO_submit(bs, QIOF_WRITEV, current,
-        //                              sector_num, qiov, nb_sectors,
-        //                              blk_complete_QAIO, NULL);
-
-        IOFSubmitArgs *args = g_new(IOFSubmitArgs, 1);
-        args->blk = blk;
-        args->offset = offset;
-        args->qiov = qiov;
-        args->flags = flags;
-        args->cb = QIOF_complete_cb;
-        args->opaque = opaque;
-
-        Coroutine *co = qemu_coroutine_create(IOF_submit_co_entry, args);
-        qemu_coroutine_enter(co);
-    }
-    // final:
-    // fprintf(stdout, "Excuting blk_aio_prwv.\n");
     return blk_aio_prwv(blk, offset, qiov->size, qiov,
                         blk_aio_write_entry, flags, cb, opaque);
 }
