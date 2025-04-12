@@ -173,23 +173,24 @@ static int coroutine_fn GRAPH_RDLOCK
 qaio_co_pwritev(BlockDriverState *bs, int64_t offset, int64_t bytes,
                 QEMUIOVector *qiov, BdrvRequestFlags flags)
 {
-    BDRVQaioState *s = bs->opaque;
+    BDRVQaioState *qs = bs->opaque;
 
     // 捕获 I/O 数据
-    if (s->qiov)
+    if (qs->qiov)
     {
-        qemu_iovec_destroy(s->qiov);
-        g_free(s->qiov);
+        qemu_iovec_destroy(qs->qiov);
+        g_free(qs->qiov);
     }
-    s->qiov = g_new(QEMUIOVector, 1);
-    qemu_iovec_init(s->qiov, qiov->niov);
-    qemu_iovec_concat(s->qiov, qiov, 0, bytes); // 使用 bytes 而非 qiov->size
-    s->offset = offset;
-    s->bytes = bytes;
-    s->timestamp = time(NULL);
+    qs->qiov = g_new(QEMUIOVector, 1);
+    qemu_iovec_init(qs->qiov, qiov->niov);
+    qemu_iovec_concat(qs->qiov, qiov, 0, bytes); // 使用 bytes 而非 qiov->size
+    qs->bs = bs->file->bs;
+    qs->offset = offset;
+    qs->bytes = bytes;
+    qs->timestamp = time(NULL);
 
     // 执行过滤器
-    qaio_work(s);
+    qaio_work(qs);
 
     return bdrv_co_pwritev(bs->file, offset, bytes, qiov, flags);
 }
