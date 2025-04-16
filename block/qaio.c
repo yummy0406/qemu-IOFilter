@@ -3,6 +3,7 @@
 #include "block/block.h"
 #include "qemu/main-loop.h"
 #include "qemu/queue.h"
+#include "qemu/coroutine.h"
 #include "qapi/error.h"
 
 typedef struct BDRVQaioState BDRVQaioState;
@@ -60,8 +61,9 @@ static int IOFilter_create(BDRVQaioState *qs, IOFilterOps *ops, const char *filt
     return 0;
 }
 
-static void qaio_work(BDRVQaioState *qs)
+static void coroutine_fn qaio_work(void *opaque)
 {
+    BDRVQaioState *qs = opaque;
     IOFilter *iof, *next;
     Error *local_err = NULL;
 
@@ -190,7 +192,8 @@ qaio_co_pwritev(BlockDriverState *bs, int64_t offset, int64_t bytes,
     qs->timestamp = time(NULL);
 
     // 执行过滤器
-    qaio_work(qs);
+    Coroutine *co = qemu_coroutine_create(qaio_work, qs);
+    qemu_coroutine_enter(co);
 
     return bdrv_co_pwritev(bs->file, offset, bytes, qiov, flags);
 }
